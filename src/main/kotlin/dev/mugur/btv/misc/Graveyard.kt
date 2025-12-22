@@ -15,12 +15,14 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.util.Vector
 import java.util.*
 
 class Graveyard : Listener {
+    private val virtualInventoryKey = NamespacedKey(Main.instance!!, "virtual-inventory")
     private val graveyardKey = NamespacedKey(Main.instance!!, "is-graveyard")
     private val killerKey = NamespacedKey(Main.instance!!, "killer")
     private val ownerKey = NamespacedKey(Main.instance!!, "owner")
@@ -33,7 +35,7 @@ class Graveyard : Listener {
             field = value
             Main.instance!!.config.set("misc.enable-graveyard", field)
         }
-
+    private val inventories = mutableMapOf<UUID, Inventory>()
 
     companion object {
         lateinit var instance: Graveyard
@@ -121,10 +123,15 @@ class Graveyard : Listener {
         player.giveExp(xp)
 
         val location = chest.location
-        for(i in 0..<chest.blockInventory.size) {
-            val item = chest.blockInventory.getItem(i) ?: continue
+
+        /* Retrieve items from virtual inventory */
+        val virtualInventoryId = UUID.fromString(pdc.get(virtualInventoryKey, PersistentDataType.STRING))
+        val virtualInventory = inventories[virtualInventoryId]
+        for(i in 0..< virtualInventory!!.size) {
+            val item = virtualInventory.getItem(i) ?: continue
             location.world.dropItemNaturally(location, item.clone())
         }
+        inventories.remove(virtualInventoryId)
 
         block.type = Material.AIR
         ChatHelper.sendMessage(player, "graveyard.success.claimed", owner.name)
@@ -143,11 +150,23 @@ class Graveyard : Listener {
 
         val player = e.player
 
+        /* Bug fix: Create virtual inventory with more slots than default chest */
+        val virtualInventoryId = UUID.randomUUID()
+        val virtualInventory = Bukkit.createInventory(null, 54, "Grave of ${player.name}")
+        for(item in e.drops) {
+            virtualInventory.addItem(item)
+        }
+        inventories[virtualInventoryId] = virtualInventory
+
+        e.droppedExp = 0
+        e.drops.clear()
+
         chestPosition.block.type = Material.CHEST
         val chest = chestPosition.block.state as Chest
 
         val pdc = chest.persistentDataContainer
         pdc.set(graveyardKey, PersistentDataType.BOOLEAN, true)
+        pdc.set(virtualInventoryKey, PersistentDataType.STRING, virtualInventoryId.toString()) // Associate virtual inventory with chest
         pdc.set(ownerKey, PersistentDataType.STRING, player.uniqueId.toString())
         pdc.set(xpKey, PersistentDataType.INTEGER, e.droppedExp)
 
@@ -162,22 +181,6 @@ class Graveyard : Listener {
             )
         }
         chest.update()
-
-        val toRemove = mutableListOf<ItemStack>()
-        for(i in e.drops.indices) {
-            if(i > 26)
-                continue
-
-            val item = e.drops[i]
-            chest.blockInventory.addItem(item.clone())
-
-            toRemove.add(item)
-        }
-
-        for(item in toRemove)
-            e.drops.remove(item)
-        
-        e.droppedExp = 0
 
         ChatHelper.sendMessage(
             player,
