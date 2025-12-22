@@ -3,6 +3,7 @@ package dev.mugur.btv.misc
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.tree.LiteralCommandNode
+import dev.mugur.btv.graveyard.Graveyard
 import dev.mugur.btv.utils.ChatCommand
 import dev.mugur.btv.utils.ChatHelper
 import io.papermc.paper.command.brigadier.CommandSourceStack
