@@ -1,5 +1,6 @@
 package dev.mugur.btv
 
+import dev.mugur.btv.graveyard.Graveyard
 import dev.mugur.btv.misc.*
 import dev.mugur.btv.towns.*
 import dev.mugur.btv.towns.interact.TownObjectListener
@@ -43,9 +44,13 @@ class Main : JavaPlugin() {
         pluginManager.registerEvents(EndDisabler(), this)
         pluginManager.registerEvents(ChatPrefix(), this)
         pluginManager.registerEvents(Graveyard(), this)
+
+        Graveyard.loadFromStorage(this)
     }
 
     override fun onDisable() {
+        Graveyard.saveToStorage(this)
+
         componentLogger.info(Component.text("Bye!"))
     }
 }

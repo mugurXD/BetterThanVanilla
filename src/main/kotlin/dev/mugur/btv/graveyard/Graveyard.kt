@@ -1,4 +1,4 @@
-package dev.mugur.btv.misc
+package dev.mugur.btv.graveyard
 
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.BoolArgumentType
@@ -15,25 +15,27 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.Inventory
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.util.Vector
-import java.util.*
+import java.util.UUID
 
 class Graveyard : Listener {
-    private val graveyardKey = NamespacedKey(Main.instance!!, "is-graveyard")
-    private val killerKey = NamespacedKey(Main.instance!!, "killer")
-    private val ownerKey = NamespacedKey(Main.instance!!, "owner")
-    private val xpKey = NamespacedKey(Main.instance!!, "xp")
-    private var enabled: Boolean = Main
+    private val virtualInventoryKey = NamespacedKey(Main.Companion.instance!!, "virtual-inventory")
+    private val graveyardKey = NamespacedKey(Main.Companion.instance!!, "is-graveyard")
+    private val killerKey = NamespacedKey(Main.Companion.instance!!, "killer")
+    private val ownerKey = NamespacedKey(Main.Companion.instance!!, "owner")
+    private val xpKey = NamespacedKey(Main.Companion.instance!!, "xp")
+    private var enabled: Boolean = Main.Companion
         .instance!!
         .config
         .getBoolean("misc.enable-graveyard")
         set(value) {
             field = value
-            Main.instance!!.config.set("misc.enable-graveyard", field)
+            Main.Companion.instance!!.config.set("misc.enable-graveyard", field)
         }
-
+    private val inventories = mutableMapOf<UUID, Inventory>()
 
     companion object {
         lateinit var instance: Graveyard
@@ -46,7 +48,7 @@ class Graveyard : Listener {
                     val value = BoolArgumentType.getBool(ctx, "value")
                     instance.enabled = value
 
-                    ChatHelper.broadcastMessage(
+                    ChatHelper.Companion.broadcastMessage(
                         if(instance.enabled)
                             "graveyard.success.enabled"
                         else
@@ -54,6 +56,14 @@ class Graveyard : Listener {
                     )
                     Command.SINGLE_SUCCESS
                 }
+        }
+
+        fun loadFromStorage(plugin: JavaPlugin) {
+            GraveSerializer.loadAllGraves(plugin).forEach { (id, inv) -> instance.inventories[id] = inv }
+        }
+
+        fun saveToStorage(plugin: JavaPlugin) {
+            instance.inventories.forEach { (id, inv) -> GraveSerializer.serializeGrave(plugin, id, inv) }
         }
     }
 
@@ -105,7 +115,7 @@ class Graveyard : Listener {
         val owner = Bukkit.getOfflinePlayer(ownerId)
         val killer = if(killerId != null) Bukkit.getOfflinePlayer(killerId) else null
         if(player.uniqueId != ownerId && player.uniqueId != killerId) {
-            ChatHelper.sendMessage(
+            ChatHelper.Companion.sendMessage(
                 player,
                 "graveyard.error.insufficient_permissions",
                 if(killer != null)
@@ -121,13 +131,18 @@ class Graveyard : Listener {
         player.giveExp(xp)
 
         val location = chest.location
-        for(i in 0..<chest.blockInventory.size) {
-            val item = chest.blockInventory.getItem(i) ?: continue
+
+        /* Retrieve items from virtual inventory */
+        val virtualInventoryId = UUID.fromString(pdc.get(virtualInventoryKey, PersistentDataType.STRING))
+        val virtualInventory = inventories[virtualInventoryId]
+        for(i in 0..< virtualInventory!!.size) {
+            val item = virtualInventory.getItem(i) ?: continue
             location.world.dropItemNaturally(location, item.clone())
         }
+        inventories.remove(virtualInventoryId)
 
         block.type = Material.AIR
-        ChatHelper.sendMessage(player, "graveyard.success.claimed", owner.name)
+        ChatHelper.Companion.sendMessage(player, "graveyard.success.claimed", owner.name)
     }
 
     @EventHandler
@@ -137,24 +152,36 @@ class Graveyard : Listener {
 
         val chestPosition = getChestPosition(e.entity.location)
         if(chestPosition == null) {
-            ChatHelper.sendMessage(e.player, "graveyard.error.no_safe_spot")
+            ChatHelper.Companion.sendMessage(e.player, "graveyard.error.no_safe_spot")
             return
         }
 
         val player = e.player
+
+        /* Bug fix: Create virtual inventory with more slots than default chest */
+        val virtualInventoryId = UUID.randomUUID()
+        val virtualInventory = Bukkit.createInventory(null, 54, "Grave of ${player.name}")
+        for(item in e.drops) {
+            virtualInventory.addItem(item)
+        }
+        inventories[virtualInventoryId] = virtualInventory
+
+        e.droppedExp = 0
+        e.drops.clear()
 
         chestPosition.block.type = Material.CHEST
         val chest = chestPosition.block.state as Chest
 
         val pdc = chest.persistentDataContainer
         pdc.set(graveyardKey, PersistentDataType.BOOLEAN, true)
+        pdc.set(virtualInventoryKey, PersistentDataType.STRING, virtualInventoryId.toString()) // Associate virtual inventory with chest
         pdc.set(ownerKey, PersistentDataType.STRING, player.uniqueId.toString())
         pdc.set(xpKey, PersistentDataType.INTEGER, e.droppedExp)
 
         val killer = e.player.killer
         if(killer != null) {
             pdc.set(killerKey, PersistentDataType.STRING, killer.uniqueId.toString())
-            ChatHelper.sendMessage(
+            ChatHelper.Companion.sendMessage(
                 killer,
                 "graveyard.kill_reward",
                 player.name,
@@ -163,23 +190,7 @@ class Graveyard : Listener {
         }
         chest.update()
 
-        val toRemove = mutableListOf<ItemStack>()
-        for(i in e.drops.indices) {
-            if(i > 26)
-                continue
-
-            val item = e.drops[i]
-            chest.blockInventory.addItem(item.clone())
-
-            toRemove.add(item)
-        }
-
-        for(item in toRemove)
-            e.drops.remove(item)
-        
-        e.droppedExp = 0
-
-        ChatHelper.sendMessage(
+        ChatHelper.Companion.sendMessage(
             player,
             "graveyard.items_saved",
             chestPosition.blockX, chestPosition.blockY, chestPosition.blockZ
