@@ -21,6 +21,7 @@ class PlayerStateRestorer : Listener {
 
         player.exp = previousState.exp
         player.teleport(previousState.location)
+        player.gameMode = previousState.gameMode
         playerStates.remove(player.uniqueId)
     }
 
@@ -30,7 +31,8 @@ class PlayerStateRestorer : Listener {
             inventory = player.inventory.contents.filterNotNull(),
             armorContents = player.inventory.armorContents.filterNotNull(),
             itemInOffHand = player.inventory.itemInOffHand,
-            exp = player.exp
+            exp = player.exp,
+            gameMode = player.gameMode
         )
 
         player.inventory.clear()
