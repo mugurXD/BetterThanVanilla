@@ -7,6 +7,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.w3c.dom.Document
@@ -29,6 +30,21 @@ class ChatHelper {
                 .instance
                 ?.componentLogger
                 ?.debug("Loaded ${list.size} XML chat resources")
+        }
+
+        // TODO: Implement string formatting for the subtitle
+        fun showTitle(player: Player, name: String, vararg args: Any?) {
+            val titleMessage = getMessageWithCustomTag(name, "title", *args)
+            val subtitleMessage = getMessageWithCustomTag(name, "subtitle")
+            player.showTitle(Title.title(titleMessage, subtitleMessage))
+        }
+
+        fun broadcastTitle(name: String, vararg args: Any?) {
+            val titleMessage = getMessageWithCustomTag(name, "title", *args)
+            val subtitleMessage = getMessageWithCustomTag(name, "subtitle")
+            for(player in Bukkit.getOnlinePlayers()) {
+                player.showTitle(Title.title(titleMessage, subtitleMessage))
+            }
         }
 
         fun sendActionBar(player: Player, name: String, vararg args: Any?) {
@@ -70,13 +86,8 @@ class ChatHelper {
             return getMessage(name, *args)
         }
 
-        fun getMessage(name: String, vararg args: Any?): Component {
-            val raw = getRawMessage(name)
-                ?.replace("<newline>\\s+","<newline>")
-                ?.replace("\\s+".toRegex(), " ")
-                ?.replace("\n+".toRegex(), "")
-
-            if(raw == null) {
+        private fun getMessageFromRawString(name: String, rawString: String?, vararg args: Any?): Component {
+            if(rawString == null) {
                 Main.instance!!
                     .componentLogger
                     .error("Tried to retrieve unknown chat message '$name'.")
@@ -86,7 +97,7 @@ class ChatHelper {
                     .color(NamedTextColor.DARK_RED)
             }
             try {
-                val formatted = String.format(raw, *args)
+                val formatted = String.format(rawString, *args)
                 return MiniMessage
                     .miniMessage()
                     .deserialize(formatted)
@@ -98,7 +109,25 @@ class ChatHelper {
             }
         }
 
-        private fun getRawMessage(name: String): String? {
+        fun getMessageWithCustomTag(name: String, tagName: String, vararg args: Any?): Component {
+            val raw = getRawMessage(name, tagName)
+                ?.replace("<newline>\\s+","<newline>")
+                ?.replace("\\s+".toRegex(), " ")
+                ?.replace("\n+".toRegex(), "")
+
+            return getMessageFromRawString(name, raw, *args)
+        }
+
+        fun getMessage(name: String, vararg args: Any?): Component {
+            val raw = getRawMessage(name)
+                ?.replace("<newline>\\s+","<newline>")
+                ?.replace("\\s+".toRegex(), " ")
+                ?.replace("\n+".toRegex(), "")
+
+            return getMessageFromRawString(name, raw, *args)
+        }
+
+        private fun getRawMessage(name: String, tagName: String = "value"): String? {
             list.forEach { doc ->
                 val root = doc
                     .getElementsByTagName("messages")
@@ -117,7 +146,7 @@ class ChatHelper {
                         continue
 
                     return message
-                        .getElementsByTagName("value")
+                        .getElementsByTagName(tagName)
                         .item(0)
                         .textContent
                 }
