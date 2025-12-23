@@ -17,7 +17,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerQuitEvent
 import java.util.UUID
 
-abstract class Minigame(val initiator: UUID) : Listener {
+abstract class Minigame(open val initiator: UUID) : Listener {
     abstract fun getDisplayName(): String
     abstract fun getMinimumParticipants(): Int
 
