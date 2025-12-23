@@ -1,6 +1,8 @@
 package dev.mugur.btv
 
 import dev.mugur.btv.graveyard.Graveyard
+import dev.mugur.btv.hns.DebugCommands
+import dev.mugur.btv.hns.HiderController
 import dev.mugur.btv.misc.*
 import dev.mugur.btv.towns.*
 import dev.mugur.btv.towns.interact.TownObjectListener
@@ -33,6 +35,7 @@ class Main : JavaPlugin() {
             registrar.register(TownCommands.plot())
             registrar.register(MiscCommands.root())
             registrar.register(DepartmentCommands.department().build())
+            registrar.register(DebugCommands.toggleHide().build())
         }
 
         val pluginManager = server.pluginManager
@@ -44,6 +47,7 @@ class Main : JavaPlugin() {
         pluginManager.registerEvents(EndDisabler(), this)
         pluginManager.registerEvents(ChatPrefix(), this)
         pluginManager.registerEvents(Graveyard(), this)
+        pluginManager.registerEvents(HiderController(), this)
 
         Graveyard.loadFromStorage(this)
     }

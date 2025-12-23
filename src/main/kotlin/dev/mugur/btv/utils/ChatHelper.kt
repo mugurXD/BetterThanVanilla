@@ -23,6 +23,7 @@ class ChatHelper {
             loadResource("messages/misc.xml")
             loadResource("messages/graveyard.xml")
             loadResource("messages/dept.xml")
+            loadResource("messages/hns.xml")
 
             Main
                 .instance

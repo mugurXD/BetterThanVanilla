@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<messages>
+    <message>
+        <id>hns.hide.switch_block_cooldown</id>
+        <value><![CDATA[You can switch to another block in <color:red>%.2f seconds</color>.]]></value>
+    </message>
+    <message>
+        <id>hns.hide.block_switched</id>
+        <value><![CDATA[Block switched!]]></value>
+    </message>
+</messages>
