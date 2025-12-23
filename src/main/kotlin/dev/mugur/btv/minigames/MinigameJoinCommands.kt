@@ -12,7 +12,7 @@ class MinigameJoinCommands {
                 .requirePlayerSender()
                 .executes { ctx ->
                     val player = ctx.source.sender as Player
-                    ChatHelper.broadcastMessage("test")
+
                     val pluginManager = Main.instance!!.server.pluginManager
                     val mg = TestMinigame(player.uniqueId)
                     pluginManager.registerEvents(mg, Main.instance!!)

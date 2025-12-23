@@ -3,6 +3,8 @@ package dev.mugur.btv
 import dev.mugur.btv.graveyard.Graveyard
 import dev.mugur.btv.hns.DebugCommands
 import dev.mugur.btv.hns.HiderController
+import dev.mugur.btv.hns.HnsCommand
+import dev.mugur.btv.hns.SeekerController
 import dev.mugur.btv.minigames.MinigameJoinCommands
 import dev.mugur.btv.minigames.PlayerStateRestorer
 import dev.mugur.btv.misc.*
@@ -39,6 +41,7 @@ class Main : JavaPlugin() {
             registrar.register(DepartmentCommands.department().build())
             registrar.register(DebugCommands.toggleHide().build())
             registrar.register(MinigameJoinCommands.joinCommand().build())
+            registrar.register(HnsCommand.command().build())
         }
 
         val pluginManager = server.pluginManager
@@ -51,6 +54,8 @@ class Main : JavaPlugin() {
         pluginManager.registerEvents(ChatPrefix(), this)
         pluginManager.registerEvents(Graveyard(), this)
         pluginManager.registerEvents(PlayerStateRestorer(), this)
+
+        pluginManager.registerEvents(SeekerController(), this)
         pluginManager.registerEvents(HiderController(), this)
 
         Graveyard.loadFromStorage(this)

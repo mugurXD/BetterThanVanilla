@@ -5,6 +5,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import java.util.UUID
 
@@ -56,6 +57,13 @@ class PlayerStateRestorer : Listener {
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     fun onPlayerQuit(e: PlayerQuitEvent) {
+        val player = e.player
+        if(playerStates.contains(player.uniqueId))
+            restorePlayerState(player.uniqueId)
+    }
+
+    @EventHandler
+    fun onPlayerDeath(e: PlayerDeathEvent) {
         val player = e.player
         if(playerStates.contains(player.uniqueId))
             restorePlayerState(player.uniqueId)

@@ -14,6 +14,7 @@ import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import java.util.UUID
 
@@ -121,6 +122,9 @@ abstract class Minigame(open val initiator: UUID) : Listener {
 
     @EventHandler
     fun onPlayerQuit(e: PlayerQuitEvent) { if(participants.contains(e.player.uniqueId)) eliminatePlayer(e.player) }
+
+    @EventHandler
+    fun onPlayerDeath(e: PlayerDeathEvent) { if(participants.contains(e.player.uniqueId)) eliminatePlayer(e.player) }
 
     open fun shouldEnd(): Boolean { return state == MinigameState.STARTED && participants.size < getMinimumParticipants() }
     fun shouldBegin(): Boolean { return state == MinigameState.WAITING && participants.size >= getMinimumParticipants() }
