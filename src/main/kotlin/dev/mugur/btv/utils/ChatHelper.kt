@@ -25,6 +25,7 @@ class ChatHelper {
             loadResource("messages/graveyard.xml")
             loadResource("messages/dept.xml")
             loadResource("messages/hns.xml")
+            loadResource("messages/minigame.xml")
 
             Main
                 .instance

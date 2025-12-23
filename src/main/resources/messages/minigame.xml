@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<messages>
+    <message>
+        <id>minigame.eliminated_title</id>
+        <title><![CDATA[<bold><color:dark_red>GAME OVER!</color></bold>]]></title>
+        <subtitle><![CDATA[You have been <color:dark_red>eliminated</color>.]]></subtitle>
+    </message>
+    <message>
+        <id>minigame.player_eliminated</id>
+        <value><![CDATA[Player <color:red>%s</color> was <bold><color:dark_red>eliminated</color>.</bold>]]></value>
+    </message>
+    <message>
+        <id>minigame.finished.winner</id>
+        <title><![CDATA[<color:gold><bold>MINIGAME WON BY</bold></color> %s<color:gold><bold>!</bold></color>]]></title>
+        <subtitle> </subtitle>
+    </message>
+    <message>
+        <id>minigame.finished.no_winner</id>
+        <title><![CDATA[<color:gold><bold>MINIGAME OVER!</bold></color>]]></title>
+        <subtitle><![CDATA[There was <color:red>no</color> winner.]]></subtitle>
+    </message>
+    <message>
+        <id>minigame.start_countdown</id>
+        <title><![CDATA[<color:gold>%s</color> begins in <color:gold>%ds</color>....]]></title>
+        <subtitle> </subtitle>
+    </message>
+</messages>
